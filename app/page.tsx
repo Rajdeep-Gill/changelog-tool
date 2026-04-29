@@ -10,16 +10,31 @@ export default function Page() {
           Changelog tool
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-          Track product changes over time. Browse the sample changelog or wire your own API when
-          you&apos;re ready.
+          Track product changes over time. Browse published entries or draft new ones from GitHub
+          commits.
         </p>
-        <Button
-          nativeButton={false}
-          className="mt-6"
-          render={<Link href="/changelog" />}
-        >
-          Open changelog
-        </Button>
+        <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <Button
+            nativeButton={false}
+            render={<Link href="/changelog" />}
+          >
+            Open changelog
+          </Button>
+          <Button
+            nativeButton={false}
+            variant="outline"
+            render={<Link href="/create" />}
+          >
+            Create
+          </Button>
+          <Button
+            nativeButton={false}
+            variant="outline"
+            render={<Link href="/edit" />}
+          >
+            Edit
+          </Button>
+        </div>
         <p className="mt-8 font-mono text-xs text-muted-foreground">
           Press <kbd>d</kbd> to toggle dark mode
         </p>

@@ -1,6 +1,6 @@
 import { format, parseISO, startOfMonth } from "date-fns"
 
-import type { ChangelogEntry } from "@/lib/changelog"
+import type { ChangelogEntry } from "@/lib/changelog/types"
 
 export type ChangelogMonthGroup = {
   monthKey: string
@@ -11,12 +11,6 @@ export type ChangelogMonthGroup = {
 /** DOM id for scroll targets (`#changelog-YYYY-MM`). */
 export function changelogMonthSectionId(monthKey: string): string {
   return `changelog-${monthKey}`
-}
-
-export function getChangelogMonthSections(
-  entries: ChangelogEntry[]
-): { monthKey: string; label: string }[] {
-  return groupEntriesByMonth(entries).map(({ monthKey, label }) => ({ monthKey, label }))
 }
 
 export function groupEntriesByMonth(entries: ChangelogEntry[]): ChangelogMonthGroup[] {
