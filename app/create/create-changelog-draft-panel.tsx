@@ -16,6 +16,7 @@ type CreateChangelogDraftPanelProps = {
   commits: GithubCommitRow[]
   selected: ReadonlySet<string>
   loadError?: string | null
+  draftError?: string | null
   commitSelectionError: string | null
   onToggleSha: (sha: string, checked: boolean) => void
   onSelectAll: () => void
@@ -31,6 +32,7 @@ export function CreateChangelogDraftPanel({
   commits,
   selected,
   loadError,
+  draftError,
   commitSelectionError,
   onToggleSha,
   onSelectAll,
@@ -90,6 +92,9 @@ export function CreateChangelogDraftPanel({
             "Generate"
           )}
         </Button>
+        {draftError ? (
+          <div className="text-sm text-destructive">{draftError}</div>
+        ) : null}
       </div>
     </>
   )

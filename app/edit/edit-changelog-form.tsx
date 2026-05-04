@@ -4,7 +4,6 @@ import * as React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema"
-import { format, parseISO } from "date-fns"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 
@@ -16,6 +15,7 @@ import {
   type ChangelogComposeFormValues,
   getDefaultComposeFormValues,
 } from "@/lib/changelog/changelog-compose-form-schema"
+import { toastEntryDeleted, toastEntrySaved } from "@/lib/changelog/changelog-toasts"
 import { ChangelogBreadcrumbs } from "@/components/changelog/changelog-breadcrumbs"
 import {
   changelogBreadcrumbRowClassName,
@@ -28,8 +28,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
-import { CreateChangelogComposePanel } from "@/app/create/create-changelog-compose-panel"
-import { cn } from "@/lib/utils"
+import { ChangelogEntryForm } from "@/components/changelog/changelog-entry-form"
+import { formatPublishedAtLocal } from "@/lib/changelog/published-at-local"
 
 type EditChangelogFormProps = {
   slug: string
@@ -38,51 +38,49 @@ type EditChangelogFormProps = {
 export function EditChangelogForm({ slug }: EditChangelogFormProps) {
   const router = useRouter()
   const entryQuery = useChangelogEntry(slug)
+  const [slugInput, setSlugInput] = React.useState(slug)
+
   const composeForm = useForm<ChangelogComposeFormValues>({
     resolver: standardSchemaResolver(changelogComposeFormSchema),
     defaultValues: getDefaultComposeFormValues(),
   })
-  const composeTitle = composeForm.watch("title")
-  const { reset, handleSubmit } = composeForm
-  const [slugInput, setSlugInput] = React.useState(slug)
-  const [previewOpen, setPreviewOpen] = React.useState(false)
+  const { reset } = composeForm
 
-  React.useEffect(() => {
+  const initialValues = React.useMemo<Partial<ChangelogComposeFormValues> | null>(() => {
     const entry = entryQuery.data
-    if (!entry) return
-    reset({
+    if (!entry) return null
+    return {
       title: entry.title,
       summary: entry.summary,
       body: entry.body,
-      publishedAtLocal: (() => {
-        try {
-          const d = parseISO(entry.publishedAt)
-          return format(d, "yyyy-MM-dd'T'HH:mm")
-        } catch {
-          return format(new Date(), "yyyy-MM-dd'T'HH:mm")
-        }
-      })(),
+      publishedAtLocal:
+        formatPublishedAtLocal(entry.publishedAt) ??
+        getDefaultComposeFormValues().publishedAtLocal,
       category: entry.category ?? "",
       breaking: Boolean(entry.breaking),
       tags: entry.tags ?? [],
       tagInput: "",
       draftAdditionalContext: "",
-    })
+    }
+  }, [entryQuery.data])
+
+  React.useEffect(() => {
+    const entry = entryQuery.data
+    if (!entry) return
     setSlugInput(entry.slug)
-  }, [entryQuery.data, reset])
+  }, [entryQuery.data])
+
+  React.useEffect(() => {
+    if (!initialValues) return
+    reset({ ...getDefaultComposeFormValues(), ...initialValues })
+  }, [slug, initialValues, reset])
 
   const saveMutation = useUpdateChangelog({
     onSuccess: (entry) => {
       if (entry.slug !== slug) {
         router.replace(`/edit/${encodeURIComponent(entry.slug)}`)
       }
-      toast.success("Saved", {
-        description: entry.title,
-        action: {
-          label: "View",
-          onClick: () => router.push(`/changelog/${entry.slug}`),
-        },
-      })
+      toastEntrySaved(router, entry)
     },
     onError: (e) => {
       toast.error(e.message)
@@ -91,8 +89,7 @@ export function EditChangelogForm({ slug }: EditChangelogFormProps) {
 
   const deleteMutation = useDeleteChangelog({
     onSuccess: () => {
-      toast.success("Removed from changelog")
-      router.push("/edit")
+      toastEntryDeleted(router)
     },
     onError: (e) => {
       toast.error(e.message)
@@ -116,11 +113,7 @@ export function EditChangelogForm({ slug }: EditChangelogFormProps) {
         <div className={changelogBreadcrumbRowClassName}>
           <ChangelogBreadcrumbs
             priorSubPage={{ label: "Edit", href: "/edit" }}
-            entryTitle={
-              entryQuery.isPending
-                ? "…"
-                : (entryQuery.data?.title?.trim() || composeTitle.trim() || "Untitled")
-            }
+            entryTitle={entryQuery.isPending ? "…" : (entryQuery.data?.title?.trim() || "Untitled")}
           />
         </div>
 
@@ -159,47 +152,49 @@ export function EditChangelogForm({ slug }: EditChangelogFormProps) {
             </header>
 
             <div className="space-y-4">
-              <div className="space-y-1">
-                <Label htmlFor="edit-slug">URL slug</Label>
-                <Input
-                  id="edit-slug"
-                  spellCheck={false}
-                  autoComplete="off"
-                  value={slugInput}
-                  onChange={(e) => setSlugInput(e.target.value)}
-                  className="font-mono text-sm"
-                />
-              </div>
-              <CreateChangelogComposePanel
+              <ChangelogEntryForm
+                mode="edit"
                 composeForm={composeForm}
-                previewOpen={previewOpen}
-                onPreviewOpenChange={setPreviewOpen}
                 submitPending={saveMutation.isPending || deleteMutation.isPending}
-                onSubmitEntry={handleSubmit((values) => {
-                  const publishedAt = new Date(values.publishedAtLocal)
+                renderPreCompose={({ composeTitle }) => (
+                  <div className="space-y-1">
+                    <Label htmlFor="edit-slug">URL slug</Label>
+                    <Input
+                      id="edit-slug"
+                      spellCheck={false}
+                      autoComplete="off"
+                      value={slugInput}
+                      onChange={(e) => setSlugInput(e.target.value)}
+                      className="font-mono text-sm"
+                    />
+                    {composeTitle.trim() ? (
+                      <p className="text-sm text-muted-foreground">
+                        Editing <span className="font-medium">{composeTitle.trim()}</span>
+                      </p>
+                    ) : null}
+                  </div>
+                )}
+                onSubmit={async ({ normalized, publishedAt }) => {
                   const newSlugTrim = slugInput.trim()
                   if (!newSlugTrim) {
                     toast.error("Slug is required")
                     return
                   }
-                  void saveMutation.mutateAsync({
+
+                  await saveMutation.mutateAsync({
                     param: { slug },
                     json: {
-                      title: values.title,
-                      summary: values.summary,
-                      body: values.body,
-                      publishedAt: publishedAt.toISOString(),
+                      title: normalized.title,
+                      summary: normalized.summary,
+                      body: normalized.body,
+                      publishedAt,
                       slug: newSlugTrim,
-                      category: values.category.trim() || null,
-                      breaking: values.breaking,
-                      tags: values.tags.length > 0 ? values.tags : null,
+                      category: normalized.category,
+                      breaking: normalized.breaking,
+                      tags: normalized.tags,
                     },
                   })
-                })}
-                sectionTitle="Entry details"
-                bodyClassName="min-h-[min(42vh,320px)] resize-y overflow-y-auto font-mono text-sm"
-                submitLabel="Save changes"
-                submitPendingLabel="Saving…"
+                }}
                 leadingActionSlot={
                   <>
                     <Button
