@@ -1,4 +1,3 @@
-import { Suspense } from "react"
 import {
   dehydrate,
   HydrationBoundary,
@@ -7,7 +6,6 @@ import {
 
 import { changelogQueryKeys } from "@/features/changelog/api/query-keys"
 import { listChangelogEntriesPage } from "@/lib/server/changelog-repository"
-import { ChangelogIndexSkeleton } from "./changelog-index-skeleton"
 import { ChangelogIndexClient } from "./changelog-index-client"
 
 const PAGE_SIZE = 20
@@ -36,9 +34,7 @@ export default async function ChangelogPage() {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <Suspense fallback={<ChangelogIndexSkeleton />}>
-        <ChangelogIndexClient />
-      </Suspense>
+      <ChangelogIndexClient />
     </HydrationBoundary>
   )
 }

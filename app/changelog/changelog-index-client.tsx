@@ -3,16 +3,26 @@
 import { useEffect, useMemo, useRef } from "react"
 
 import { ChangelogTimeline } from "@/components/changelog/changelog-timeline"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useChangelogEntries } from "@/features/changelog/api/use-changelog-entries"
 
+import { ChangelogIndexSkeleton } from "./changelog-index-skeleton"
+
 export function ChangelogIndexClient() {
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useChangelogEntries()
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isPending,
+    isError,
+    error,
+  } = useChangelogEntries()
   const sentinelRef = useRef<HTMLDivElement | null>(null)
 
   const entries = useMemo(
-    () => data.pages.flatMap((page) => page.items),
-    [data.pages]
+    () => data?.pages.flatMap((page) => page.items) ?? [],
+    [data?.pages]
   )
 
   useEffect(() => {
@@ -34,6 +44,10 @@ export function ChangelogIndexClient() {
     return () => observer.disconnect()
   }, [fetchNextPage, hasNextPage, isFetchingNextPage])
 
+  if (isPending && entries.length === 0) {
+    return <ChangelogIndexSkeleton />
+  }
+
   return (
     <>
       <header className="mb-10 sm:mb-12">
@@ -45,6 +59,15 @@ export function ChangelogIndexClient() {
           for full release notes.
         </p>
       </header>
+
+      {isError ? (
+        <Alert variant="destructive" className="mb-8">
+          <AlertTitle>Could not load changelog</AlertTitle>
+          <AlertDescription>
+            {error?.message ?? "Unknown error"}
+          </AlertDescription>
+        </Alert>
+      ) : null}
 
       <ChangelogTimeline entries={entries} />
       {hasNextPage ? (

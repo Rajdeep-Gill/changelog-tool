@@ -33,39 +33,25 @@ const edit = new Hono()
     "/:slug",
     zValidator("json", patchChangelogBodySchema),
     async (c) => {
-      try {
-        const slug = c.req.param("slug")
-        const patchInput = patchInputFromBody(c.req.valid("json"))
-        const result = await updateChangelogEntryBySlug(slug, patchInput)
-        if (!result.ok) {
-          if (result.reason === "not_found") {
-            return c.json({ error: "Not found" }, 404)
-          }
-          return c.json({ error: "Slug already in use" }, 409)
+      const slug = c.req.param("slug")
+      const patchInput = patchInputFromBody(c.req.valid("json"))
+      const result = await updateChangelogEntryBySlug(slug, patchInput)
+      if (!result.ok) {
+        if (result.reason === "not_found") {
+          return c.json({ error: "Not found" }, 404)
         }
-        return c.json(result.entry)
-      } catch (e) {
-        const message =
-          e instanceof Error ? e.message : "Failed to update changelog entry"
-        const status = message.includes("DATABASE_URL") ? 503 : 500
-        return c.json({ error: message }, status)
+        return c.json({ error: "Slug already in use" }, 409)
       }
+      return c.json(result.entry)
     }
   )
   .delete("/:slug", async (c) => {
-    try {
-      const slug = c.req.param("slug")
-      const deleted = await deleteChangelogEntryBySlug(slug)
-      if (!deleted) {
-        return c.json({ error: "Not found" }, 404)
-      }
-      return c.body(null, 204)
-    } catch (e) {
-      const message =
-        e instanceof Error ? e.message : "Failed to delete changelog entry"
-      const status = message.includes("DATABASE_URL") ? 503 : 500
-      return c.json({ error: message }, status)
+    const slug = c.req.param("slug")
+    const deleted = await deleteChangelogEntryBySlug(slug)
+    if (!deleted) {
+      return c.json({ error: "Not found" }, 404)
     }
+    return c.body(null, 204)
   })
 
 export default edit

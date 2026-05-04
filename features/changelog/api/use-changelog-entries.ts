@@ -3,7 +3,7 @@
 import { InferResponseType } from "hono"
 import {
   infiniteQueryOptions,
-  useSuspenseInfiniteQuery,
+  useInfiniteQuery,
 } from "@tanstack/react-query"
 
 import { client } from "@/lib/hono"
@@ -42,5 +42,5 @@ export function changelogEntriesQueryOptions() {
 }
 
 export function useChangelogEntries() {
-  return useSuspenseInfiniteQuery(changelogEntriesQueryOptions())
+  return useInfiniteQuery(changelogEntriesQueryOptions())
 }

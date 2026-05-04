@@ -12,10 +12,14 @@ type ChangelogEntryLayoutFooterProps = {
 }
 
 export function ChangelogEntryLayoutFooter({ slug }: ChangelogEntryLayoutFooterProps) {
-  const { data } = useChangelogEntries()
-  const allEntries = data.pages.flatMap((page) => page.items)
+  const { data, isPending } = useChangelogEntries()
+  const allEntries =
+    data?.pages.flatMap((page) => page.items) ?? []
 
-  const related = allEntries.filter((entry) => entry.slug !== slug).slice(0, 3)
+  const related =
+    isPending || allEntries.length === 0
+      ? []
+      : allEntries.filter((entry) => entry.slug !== slug).slice(0, 3)
 
   return (
     <footer className="mt-14 sm:mt-16">

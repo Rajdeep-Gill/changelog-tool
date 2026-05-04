@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { format, parseISO } from "date-fns"
+import { useMemo } from "react"
 
 import { groupEntriesByMonth } from "@/components/changelog/group-by-month"
 import { ChangelogBreadcrumbs } from "@/components/changelog/changelog-breadcrumbs"
@@ -11,6 +12,7 @@ import {
   editMainColumnClassName,
 } from "@/components/changelog/layout-classes"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useChangelogEntries } from "@/features/changelog/api/use-changelog-entries"
 import { monthHeadingParts } from "@/lib/changelog/date-format"
 
@@ -23,9 +25,33 @@ function formatPublishedShort(iso: string): string {
 }
 
 export function EditIndexClient() {
-  const { data, isError, error } = useChangelogEntries()
-  const entries = data.pages.flatMap((page) => page.items)
+  const { data, isError, error, isPending } = useChangelogEntries()
+  const entries = useMemo(
+    () => data?.pages.flatMap((page) => page.items) ?? [],
+    [data?.pages]
+  )
   const byMonth = groupEntriesByMonth(entries)
+
+  if (isPending && entries.length === 0) {
+    return (
+      <div className="min-h-svh bg-background">
+        <div className={editMainColumnClassName}>
+          <div className={changelogBreadcrumbRowClassName}>
+            <ChangelogBreadcrumbs subPage="Edit" />
+          </div>
+          <header className={changelogPageHeaderSectionClassName}>
+            <Skeleton className="h-9 w-[min(12rem,50vw)] max-w-xs" />
+            <Skeleton className="mt-4 h-14 max-w-2xl rounded-lg" />
+          </header>
+          <div className="mt-8 space-y-4">
+            <Skeleton className="h-12 w-full rounded-lg" />
+            <Skeleton className="h-12 w-full rounded-lg" />
+            <Skeleton className="h-12 w-full rounded-lg" />
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-svh bg-background">
