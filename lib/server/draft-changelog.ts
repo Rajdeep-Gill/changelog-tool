@@ -1,4 +1,4 @@
-import { generateObject } from "ai"
+import { generateText, Output } from "ai"
 import { z } from "zod"
 
 import type { NormalizedGithubCommit } from "@/lib/server/github-commits"
@@ -70,13 +70,15 @@ Produce a concise changelog entry for end users and developers using the product
 - suggestedPublishedAt: optional end-of-window date YYYY-MM-DD if it fits.
 - tags: optional 1–5 short labels when clearly implied (e.g. Feature, Bug fix, Security, Documentation, Performance, Deprecation); omit if unsure.${extraInstructions}`
 
-  const { object } = await generateObject({
+  const { output } = await generateText({
     model: googleAI(modelId),
-    schema: draftOutputSchema,
+    output: Output.object({
+      schema: draftOutputSchema,
+    }),
     system:
       "You write clear changelogs from git history. Stay faithful to the commits; do not invent features not implied by the messages.",
     prompt,
   })
 
-  return object
+  return output
 }

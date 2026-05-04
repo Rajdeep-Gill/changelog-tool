@@ -1,5 +1,4 @@
-import { NextResponse } from "next/server"
-
+import { Hono } from "hono"
 import { generateText } from "ai"
 
 import {
@@ -8,15 +7,13 @@ import {
   getGoogleGenerativeAI,
 } from "@/lib/server/google-gemini"
 
-/**
- * GET /api/ai/gemini-health — quick check that the Gemini API key and model work.
- */
-export async function GET() {
+/** GET /api/ai/gemini-health — quick check that Gemini key and model work. */
+const gemini = new Hono().get("/gemini-health", async (c) => {
   try {
     getGeminiApiKey()
   } catch (e) {
     const message = e instanceof Error ? e.message : "Missing API key"
-    return NextResponse.json({ ok: false, error: message }, { status: 503 })
+    return c.json({ ok: false, error: message }, 503)
   }
 
   const modelId = getGeminiModelId()
@@ -27,20 +24,22 @@ export async function GET() {
       prompt: 'Reply with exactly the word "OK" and nothing else.',
       maxOutputTokens: 16,
     })
-    return NextResponse.json({
+    return c.json({
       ok: true,
       model: modelId,
       reply: text.trim().slice(0, 50),
     })
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e)
-    return NextResponse.json(
+    return c.json(
       {
         ok: false,
         model: modelId,
         error: message,
       },
-      { status: 502 }
+      502
     )
   }
-}
+})
+
+export default gemini
