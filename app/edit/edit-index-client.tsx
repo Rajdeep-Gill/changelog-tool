@@ -11,8 +11,8 @@ import {
   editMainColumnClassName,
 } from "@/components/changelog/layout-classes"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Skeleton } from "@/components/ui/skeleton"
-import { useChangelogEntries } from "@/hooks/use-changelog-queries"
+import { useChangelogEntries } from "@/features/changelog/api/use-changelog-entries"
+import { monthHeadingParts } from "@/lib/changelog/date-format"
 
 function formatPublishedShort(iso: string): string {
   try {
@@ -23,7 +23,8 @@ function formatPublishedShort(iso: string): string {
 }
 
 export function EditIndexClient() {
-  const { data: entries = [], isPending, isError, error } = useChangelogEntries()
+  const { data, isError, error } = useChangelogEntries()
+  const entries = data.pages.flatMap((page) => page.items)
   const byMonth = groupEntriesByMonth(entries)
 
   return (
@@ -50,15 +51,7 @@ export function EditIndexClient() {
           </Alert>
         ) : null}
 
-        {isPending ? (
-          <div className="space-y-2">
-            <Skeleton className="h-6 w-40" />
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-6 w-36 pt-4" />
-            <Skeleton className="h-8 w-full" />
-          </div>
-        ) : entries.length === 0 ? (
+        {entries.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             No entries yet.&nbsp;
             <Link href="/create" className="font-medium text-primary underline-offset-4 hover:underline">
@@ -68,13 +61,15 @@ export function EditIndexClient() {
           </p>
         ) : (
           <div className="space-y-6">
-            {byMonth.map((group) => (
-              <section key={group.monthKey} aria-labelledby={`edit-month-${group.monthKey}`}>
+            {byMonth.map((group) => {
+              const { month, year } = monthHeadingParts(group.monthKey)
+              return (
+                <section key={group.monthKey} aria-labelledby={`edit-month-${group.monthKey}`}>
                 <h2
                   id={`edit-month-${group.monthKey}`}
                   className="border-b border-dashed border-border/70 pb-1.5 font-heading text-[1.125rem] font-semibold tracking-tight text-balance text-foreground sm:text-[1.25rem]"
                 >
-                  {group.label}
+                  {month} {year}
                 </h2>
                 <ul className="divide-y divide-dashed divide-border/70">
                   {group.entries.map((entry) => {
@@ -104,8 +99,9 @@ export function EditIndexClient() {
                     )
                   })}
                 </ul>
-              </section>
-            ))}
+                </section>
+              )
+            })}
           </div>
         )}
       </div>
