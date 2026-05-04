@@ -1,12 +1,12 @@
-import { and, desc, eq, ne } from "drizzle-orm"
+import { and, desc, eq, lt, ne, or } from "drizzle-orm"
 
+import { db } from "@/db/drizzle"
 import {
   changelogEntries,
   type ChangelogEntryRow,
   type ChangelogSourceMeta,
 } from "@/db/schema"
 import type { ChangelogEntry } from "@/lib/changelog/types"
-import { getDb } from "@/lib/db"
 import { slugifyTitle } from "@/lib/slug"
 
 export function rowToChangelogEntry(row: ChangelogEntryRow): ChangelogEntry {
@@ -22,12 +22,27 @@ export function rowToChangelogEntry(row: ChangelogEntryRow): ChangelogEntry {
   }
 }
 
+export type ChangelogListCursor = {
+  publishedAt: Date
+  slug: string
+}
+
+export type ListChangelogEntriesPageInput = {
+  limit: number
+  cursor?: ChangelogListCursor | null
+}
+
+export type ListChangelogEntriesPageResult = {
+  items: ChangelogEntry[]
+  nextCursor: ChangelogListCursor | null
+}
+
 async function resolveUniqueSlug(base: string): Promise<string> {
   const normalized = slugifyTitle(base)
   for (let counter = 0; counter < 200; counter += 1) {
     const candidate =
       counter === 0 ? normalized : `${normalized}-${counter}`
-    const found = await getDb()
+    const found = await db
       .select({ id: changelogEntries.id })
       .from(changelogEntries)
       .where(eq(changelogEntries.slug, candidate))
@@ -38,17 +53,53 @@ async function resolveUniqueSlug(base: string): Promise<string> {
 }
 
 export async function listChangelogEntries(): Promise<ChangelogEntry[]> {
-  const rows = await getDb()
+  const rows = await db
     .select()
     .from(changelogEntries)
     .orderBy(desc(changelogEntries.publishedAt))
   return rows.map(rowToChangelogEntry)
 }
 
+export async function listChangelogEntriesPage({
+  limit,
+  cursor,
+}: ListChangelogEntriesPageInput): Promise<ListChangelogEntriesPageResult> {
+  const rows = await db
+    .select()
+    .from(changelogEntries)
+    .where(
+      cursor
+        ? or(
+            lt(changelogEntries.publishedAt, cursor.publishedAt),
+            and(
+              eq(changelogEntries.publishedAt, cursor.publishedAt),
+              lt(changelogEntries.slug, cursor.slug)
+            )
+          )
+        : undefined
+    )
+    .orderBy(desc(changelogEntries.publishedAt), desc(changelogEntries.slug))
+    .limit(limit + 1)
+
+  const hasMore = rows.length > limit
+  const pageRows = hasMore ? rows.slice(0, limit) : rows
+  const lastRow = pageRows[pageRows.length - 1]
+
+  return {
+    items: pageRows.map(rowToChangelogEntry),
+    nextCursor: hasMore
+      ? {
+          publishedAt: lastRow.publishedAt,
+          slug: lastRow.slug,
+        }
+      : null,
+  }
+}
+
 export async function getChangelogEntryBySlug(
   slug: string
 ): Promise<ChangelogEntry | null> {
-  const rows = await getDb()
+  const rows = await db
     .select()
     .from(changelogEntries)
     .where(eq(changelogEntries.slug, slug))
@@ -71,7 +122,7 @@ export async function insertChangelogEntry(input: {
   const slug = await resolveUniqueSlug(
     input.slug ?? slugifyTitle(input.title)
   )
-  const [row] = await getDb()
+  const [row] = await db
     .insert(changelogEntries)
     .values({
       slug,
@@ -112,7 +163,7 @@ export async function updateChangelogEntryBySlug(
     source?: ChangelogSourceMeta | null
   }
 ): Promise<UpdateChangelogEntryResult> {
-  const rows = await getDb()
+  const rows = await db
     .select()
     .from(changelogEntries)
     .where(eq(changelogEntries.slug, existingSlug))
@@ -140,7 +191,7 @@ export async function updateChangelogEntryBySlug(
   if (input.slug !== undefined) {
     const normalized = slugifyTitle(input.slug)
     if (normalized !== current.slug) {
-      const conflict = await getDb()
+      const conflict = await db
         .select({ id: changelogEntries.id })
         .from(changelogEntries)
         .where(
@@ -157,7 +208,7 @@ export async function updateChangelogEntryBySlug(
     }
   }
 
-  const [row] = await getDb()
+  const [row] = await db
     .update(changelogEntries)
     .set(updateValues)
     .where(eq(changelogEntries.id, current.id))
@@ -171,7 +222,7 @@ export async function updateChangelogEntryBySlug(
 }
 
 export async function deleteChangelogEntryBySlug(slug: string): Promise<boolean> {
-  const deleted = await getDb()
+  const deleted = await db
     .delete(changelogEntries)
     .where(eq(changelogEntries.slug, slug))
     .returning({ id: changelogEntries.id })
