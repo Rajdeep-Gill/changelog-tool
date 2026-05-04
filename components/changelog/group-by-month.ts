@@ -4,7 +4,6 @@ import type { ChangelogEntry } from "@/lib/changelog/types"
 
 export type ChangelogMonthGroup = {
   monthKey: string
-  label: string
   entries: ChangelogEntry[]
 }
 
@@ -26,15 +25,11 @@ export function groupEntriesByMonth(entries: ChangelogEntry[]): ChangelogMonthGr
 
   return [...map.entries()]
     .sort(([a], [b]) => b.localeCompare(a))
-    .map(([monthKey, groupEntries]) => {
-      const label = format(parseISO(`${monthKey}-01`), "MMMM yyyy")
-      return {
-        monthKey,
-        label,
-        entries: groupEntries.sort(
-          (a, b) =>
-            new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
-        ),
-      }
-    })
+    .map(([monthKey, groupEntries]) => ({
+      monthKey,
+      entries: groupEntries.sort(
+        (a, b) =>
+          new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+      ),
+    }))
 }

@@ -1,5 +1,4 @@
 import Link from "next/link"
-import { format, parseISO } from "date-fns"
 
 import { EntryTags } from "@/components/changelog/entry-tags"
 import { Badge } from "@/components/ui/badge"
@@ -11,17 +10,13 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import type { ChangelogEntry } from "@/lib/changelog/types"
+import {
+  formatChangelogDate,
+  monthHeadingParts,
+} from "@/lib/changelog/date-format"
 import { cn } from "@/lib/utils"
 
 import { changelogMonthSectionId, groupEntriesByMonth } from "./group-by-month"
-
-function monthHeadingParts(monthKey: string) {
-  const d = parseISO(`${monthKey}-01`)
-  return {
-    month: format(d, "MMMM"),
-    year: format(d, "yyyy"),
-  }
-}
 
 /** Dot vertical offset — push dots slightly below card title band */
 const TIMELINE_DOT_OFFSET = "pt-4"
@@ -93,9 +88,11 @@ export function ChangelogTimeline({
             ) : null}
 
             {group.entries.map((entry) => {
-              const published = parseISO(entry.publishedAt)
-              const monthShort = format(published, "MMM")
-              const dayNum = format(published, "d")
+              const monthShort = formatChangelogDate(
+                entry.publishedAt,
+                "monthShort"
+              )
+              const dayNum = formatChangelogDate(entry.publishedAt, "dayOfMonth")
 
               return (
               <article
