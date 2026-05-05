@@ -118,6 +118,17 @@ function ChangelogComposePanelForm({
     setValue("body", markdown, { shouldValidate: true, shouldDirty: true })
   }, [getEditorInstance, setValue])
 
+  const syncBodyMarkdownFromTyping = React.useCallback(
+    (markdown: string) => {
+      setValue("body", markdown, {
+        shouldValidate: true,
+        shouldDirty: true,
+        shouldTouch: true,
+      })
+    },
+    [setValue],
+  )
+
   const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (editorLoading) return
@@ -223,6 +234,7 @@ function ChangelogComposePanelForm({
                       ? field.value
                       : (composeBodySeedMarkdown ?? "")
                   }
+                  onMarkdownChange={syncBodyMarkdownFromTyping}
                   className={cn("min-h-0 flex-1", bodyClassName)}
                   aria-invalid={fieldState.invalid}
                 />

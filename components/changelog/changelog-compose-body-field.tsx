@@ -2,14 +2,18 @@
 
 import * as React from "react"
 import { Editor, defaultValueCtx, rootCtx } from "@milkdown/kit/core"
+import { listener, listenerCtx } from "@milkdown/kit/plugin/listener"
 import { commonmark } from "@milkdown/kit/preset/commonmark"
-import { Milkdown, useEditor } from "@milkdown/react"
+import { getMarkdown, replaceAll } from "@milkdown/kit/utils"
+import { Milkdown, useEditor, useInstance } from "@milkdown/react"
 import { nord } from "@milkdown/theme-nord"
 
 import { cn } from "@/lib/utils"
 
 type ChangelogComposeBodyFieldProps = {
   initialMarkdown: string
+  /** Called when the editor markdown changes (debounced inside Milkdown). Keeps RHF in sync for validation. */
+  onMarkdownChange?: (markdown: string) => void
   className?: string
   id?: string
   "aria-invalid"?: boolean
@@ -17,10 +21,17 @@ type ChangelogComposeBodyFieldProps = {
 
 export function ChangelogComposeBodyField({
   initialMarkdown,
+  onMarkdownChange,
   className,
   id,
   "aria-invalid": ariaInvalid,
 }: ChangelogComposeBodyFieldProps) {
+  const [editorLoading, getEditorInstance] = useInstance()
+  const onMarkdownChangeRef = React.useRef(onMarkdownChange)
+  React.useLayoutEffect(() => {
+    onMarkdownChangeRef.current = onMarkdownChange
+  }, [onMarkdownChange])
+
   useEditor(
     (root) =>
       Editor.make()
@@ -29,9 +40,26 @@ export function ChangelogComposeBodyField({
           ctx.set(rootCtx, root)
           ctx.set(defaultValueCtx, initialMarkdown)
         })
-        .use(commonmark),
-    []
+        .use(commonmark)
+        .use(listener)
+        .config((ctx) => {
+          ctx.get(listenerCtx).markdownUpdated((_ctx, markdown) => {
+            onMarkdownChangeRef.current?.(markdown)
+          })
+        }),
+    [],
   )
+
+  React.useEffect(() => {
+    if (editorLoading) return
+    const editor = getEditorInstance()
+    if (!editor) return
+
+    const current = editor.action(getMarkdown())
+    if (current === initialMarkdown) return
+
+    editor.action(replaceAll(initialMarkdown, true))
+  }, [editorLoading, getEditorInstance, initialMarkdown])
 
   return (
     <div

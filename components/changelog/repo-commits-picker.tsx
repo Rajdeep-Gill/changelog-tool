@@ -5,14 +5,6 @@ import { GitBranchIcon } from "@phosphor-icons/react"
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { cn } from "@/lib/utils"
 
 export type GithubCommitRow = {
   sha: string
@@ -87,7 +79,7 @@ export function RepoCommitsPicker({
         ) : null}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] border-t border-border/40 px-1.5 pt-1">
+      <div className="min-h-0 flex-1 overflow-auto overscroll-contain [-webkit-overflow-scrolling:touch] border-t border-border/40 px-1.5 pt-1">
         {commits.length === 0 ? (
           <div
             className="flex min-h-40 flex-col items-center justify-center gap-2 rounded-md border border-dashed border-border/55 bg-muted/25 px-5 py-8 text-center sm:min-h-48"
@@ -106,51 +98,95 @@ export function RepoCommitsPicker({
             </p>
           </div>
         ) : (
-          <table
-            className={cn(
-              "w-full table-fixed caption-bottom border-collapse text-xs",
-              "[&_td]:p-1.5 [&_th]:h-8 [&_th]:px-2 [&_th]:py-1"
-            )}
+          <div
+            className="flex w-full min-w-0 flex-col text-xs"
+            role="grid"
+            aria-label="Commits"
           >
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-19 whitespace-nowrap">Date</TableHead>
-                <TableHead className="min-w-0">Subject</TableHead>
-                <TableHead className="w-18 font-mono">SHA</TableHead>
-                <TableHead className="w-9 text-end [&:has([role=checkbox])]:pr-2">
-                  <span className="sr-only">Select</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {commits.map((c) => (
-                <TableRow key={c.sha}>
-                  <TableCell className="py-1.5 text-[0.6875rem] whitespace-nowrap text-muted-foreground tabular-nums">
-                    {format(parseISO(c.authorDate), "MMM d HH:mm")}
-                  </TableCell>
-                  <TableCell className="max-w-0 min-w-0 truncate py-1.5 text-[0.6875rem]">
-                    {c.subject}
-                  </TableCell>
-                  <TableCell className="py-1.5 font-mono text-[0.6875rem] leading-none">
-                    <a
-                      href={c.htmlUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-primary underline-offset-4 hover:underline"
-                    >
-                      {c.shortSha}
-                    </a>
-                  </TableCell>
-                  <TableCell className="w-9 py-1.5 text-end">
+            <div
+              className="grid w-full grid-cols-[2.25rem_3rem_minmax(12rem,1fr)] items-stretch border-b border-border/40"
+              role="row"
+            >
+              <div
+                className="flex items-center justify-center border-0 px-1 py-2"
+                role="columnheader"
+              >
+                <span className="sr-only">Checkbox</span>
+              </div>
+              <div
+                className="flex items-center border-0 px-1.5 py-2 text-[0.6875rem] font-medium whitespace-nowrap text-muted-foreground"
+                role="columnheader"
+              >
+                Date
+              </div>
+              <div
+                className="flex items-center border-0 px-1.5 py-2 text-[0.6875rem] font-medium whitespace-nowrap text-muted-foreground"
+                role="columnheader"
+              >
+                Commit message
+              </div>
+            </div>
+            {commits.map((c) => {
+              const isSelected = selected.has(c.sha)
+              const toggleRow = () => onToggleSha(c.sha, !isSelected)
+              return (
+                <div
+                  key={c.sha}
+                  role="row"
+                  data-state={isSelected ? "selected" : undefined}
+                  className="grid w-full grid-cols-[2.25rem_3rem_minmax(12rem,1fr)] items-stretch cursor-pointer border-b border-border/40 transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+                  tabIndex={0}
+                  onClick={toggleRow}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault()
+                      toggleRow()
+                    }
+                  }}
+                >
+                  <div
+                    className="flex items-center justify-center py-1.5"
+                    role="gridcell"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <Checkbox
-                      checked={selected.has(c.sha)}
-                      onCheckedChange={(v) => onToggleSha(c.sha, v === true)}
+                      checked={isSelected}
+                      onCheckedChange={(v) =>
+                        onToggleSha(c.sha, v === true)
+                      }
                     />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </table>
+                  </div>
+                  <div
+                    className="flex min-w-0 items-center px-1 py-1.5 text-[0.6875rem] text-muted-foreground tabular-nums"
+                    role="gridcell"
+                  >
+                    <div className="min-w-0 flex-1 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                      <span className="inline-block whitespace-nowrap">
+                        {format(parseISO(c.authorDate), "MMM d")}
+                      </span>
+                    </div>
+                  </div>
+                  <div
+                    className="flex min-w-0 items-center px-1.5 py-1.5 text-[0.6875rem]"
+                    role="gridcell"
+                  >
+                    <div className="min-w-0 flex-1 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                      <a
+                        href={c.htmlUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={c.subject}
+                        className="inline-block whitespace-nowrap text-primary underline underline-offset-4 decoration-primary/80"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {c.subject}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         )}
       </div>
     </>

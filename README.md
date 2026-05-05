@@ -1,6 +1,6 @@
 # Changelog tool
 
-AI-assisted changelog writer and a minimal public changelog site. Pick a GitHub repo and date range, select commits, generate a structured draft with Gemini, edit, and publish. Visitors browse entries at `/changelog`.
+AI-assisted changelog writer and a minimal public changelog site. Pick a GitHub repo and date range, select commits, generate a structured draft with Gemini, edit, and publish. Visitors browse entries at `/changelog`, with **search** across titles, summaries, and bodies (`?q=`). Entry bodies are written in a **markdown editor** (Milkdown) while stored as markdown end-to-end.
 
 ## Quick start
 
@@ -30,7 +30,7 @@ Run the app:
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Use **Create** to build entries from GitHub + AI, **Changelog** for the public list, **Edit** to revise published entries.
+Open [http://localhost:3000](http://localhost:3000). Use **Create** to build entries from GitHub + AI, **Changelog** for the public list (including search), **Edit** to revise published entries in the same markdown editor used when creating.
 
 Other scripts: `pnpm build`, `pnpm start`, `pnpm lint`, `pnpm typecheck`, `pnpm db:studio`.
 
@@ -83,9 +83,9 @@ lib/
 1. **Create page** gathers repo URL + branch + date window, then calls `/api/github/...` to fetch commits.
 2. Selected commit SHAs + optional context are sent to `/api/changelog/draft`.
 3. The server formats commit data and calls Gemini via AI SDK for structured draft output.
-4. Draft is applied to the compose form (title/summary/body/tags/date), user edits as needed.
+4. Draft is applied to the compose form (title/summary/body/tags/date); the **body** is edited in a markdown-capable editor and synced into the form on submit.
 5. Publish sends form data to `/api/changelog`; backend validates and inserts with Drizzle.
-6. Public pages query changelog entries and render timeline/detail views.
+6. Public pages query changelog entries and render timeline/detail views; the index supports **debounced URL-backed search** and infinite scroll for filtered lists.
 7. Edit page loads an entry by slug, then uses `/api/edit/:slug` to update or delete.
 
 ### Frontend data layer
@@ -98,4 +98,8 @@ lib/
 **Why this shape:** Maintainers care about two things: seeing what landed in git over a window, and turning that into **end-user-facing** notes. The create flow fetches commits server-side via the GitHub API, lets you **curate** SHAs (noise control vs. dumping every commit), then calls an LLM with structured output (title, summary, markdown body, tags, etc.) so the result is predictable and easy to edit before publish.
 
 **Stack:** **Next.js** (App Router) keeps API routes and UI in one deployable app. **Neon + Drizzle** fit a small changelog table without running Postgres yourself. **Vercel AI SDK** + **`@ai-sdk/google`** give `generateObject` with a Zod schema so the model returns typed fields instead of raw markdown parsing. **TanStack Query** handles client fetching; **shadcn/ui** + Tailwind keep the UI minimal and consistent with a docs-style changelog.
+
+**Markdown editing:** The compose UI uses **Milkdown** (CommonMark) so authors get a proper editing surface while the API and DB stay markdown-first.
+
+**Search:** The public changelog list filters entries with a **case-insensitive substring** match over title, summary, and body; the query string is reflected in `q` so results are linkable.
 
