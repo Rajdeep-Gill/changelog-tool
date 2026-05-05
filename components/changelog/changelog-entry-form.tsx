@@ -8,6 +8,7 @@ import type { ChangelogComposeFormValues } from "@/lib/changelog/changelog-compo
 import { normalizeChangelogComposeValues } from "@/lib/changelog/normalize-compose-values"
 import { parsePublishedAtLocal } from "@/lib/changelog/published-at-local"
 import { ChangelogComposePanel } from "@/components/changelog/changelog-compose-panel"
+import { cn } from "@/lib/utils"
 
 export type ChangelogEntryFormMode = "create" | "edit"
 
@@ -33,15 +34,13 @@ type ModeCosmetics = {
 const MODE_COSMETICS: Record<ChangelogEntryFormMode, ModeCosmetics> = {
   create: {
     sectionTitle: "Compose",
-    bodyClassName:
-      "max-h-[min(34vh,280px)] min-h-[min(30vh,220px)] resize-y overflow-y-auto font-mono text-sm",
+    bodyClassName: "w-full font-mono text-sm",
     submitLabel: "Add entry",
     submitPendingLabel: "Adding\u2026",
   },
   edit: {
     sectionTitle: "Entry details",
-    bodyClassName:
-      "min-h-[min(42vh,320px)] resize-y overflow-y-auto font-mono text-sm",
+    bodyClassName: "w-full font-mono text-sm",
     submitLabel: "Save changes",
     submitPendingLabel: "Saving\u2026",
   },
@@ -50,6 +49,8 @@ const MODE_COSMETICS: Record<ChangelogEntryFormMode, ModeCosmetics> = {
 type CommonProps = {
   mode: ChangelogEntryFormMode
   composeForm: UseFormReturn<ChangelogComposeFormValues>
+  composeBodyKey?: string
+  composeBodySeedMarkdown?: string
 
   renderPreCompose?: (ctx: ChangelogEntryFormContext) => React.ReactNode
 
@@ -62,6 +63,8 @@ type CommonProps = {
 export function ChangelogEntryForm({
   mode,
   composeForm,
+  composeBodyKey,
+  composeBodySeedMarkdown,
   renderPreCompose,
   submitPending,
   onSubmit,
@@ -89,14 +92,21 @@ export function ChangelogEntryForm({
   })
 
   return (
-    <div className="min-h-0 min-w-0">
+    <div
+      className={cn(
+        "flex min-w-0 flex-col",
+        mode === "create" && "min-h-0 flex-1",
+      )}
+    >
       {renderPreCompose ? (
-        <div className="mb-4">
+        <div className="mb-4 shrink-0">
           {renderPreCompose({ composeForm, composeTitle })}
         </div>
       ) : null}
       <ChangelogComposePanel
         composeForm={composeForm}
+        composeBodyKey={composeBodyKey}
+        composeBodySeedMarkdown={composeBodySeedMarkdown}
         previewOpen={previewOpen}
         onPreviewOpenChange={setPreviewOpen}
         submitPending={submitPending}
@@ -106,6 +116,7 @@ export function ChangelogEntryForm({
         submitLabel={cosmetics.submitLabel}
         submitPendingLabel={cosmetics.submitPendingLabel}
         leadingActionSlot={leadingActionSlot}
+        scrollLayout={mode === "edit" ? "document" : "viewport"}
       />
     </div>
   )

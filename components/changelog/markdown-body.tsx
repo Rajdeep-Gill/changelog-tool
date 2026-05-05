@@ -10,6 +10,7 @@ import ShikiHighlighter, { isInlineCode } from "react-shiki"
 import { useTheme } from "next-themes"
 
 import { Button } from "@/components/ui/button"
+import { normalizeMarkdownHtmlBreaks } from "@/lib/changelog/normalize-markdown-html-breaks"
 import { cn } from "@/lib/utils"
 
 const shikiDualTheme = {
@@ -220,11 +221,12 @@ export function MarkdownBody({ children, className }: MarkdownBodyProps) {
     () => createMarkdownComponents(defaultColor),
     [defaultColor],
   )
+  const source = normalizeMarkdownHtmlBreaks(children)
 
   return (
     <article className={className}>
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
-        {children}
+        {source}
       </ReactMarkdown>
     </article>
   )

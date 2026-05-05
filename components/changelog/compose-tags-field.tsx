@@ -121,7 +121,7 @@ export function ComposeTagsField({ composeForm }: ComposeTagsFieldProps) {
           <div
             ref={tagsScrollRef}
             onScroll={updateTagsScrollFade}
-            className="flex flex-nowrap gap-2 overflow-x-auto overscroll-x-contain py-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="flex flex-nowrap gap-2 overflow-x-auto overscroll-x-contain px-1 py-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {DEFAULT_CHANGELOG_TAGS.map((label) => {
               const active = tags.some(
