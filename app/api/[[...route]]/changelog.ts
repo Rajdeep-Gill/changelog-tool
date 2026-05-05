@@ -12,6 +12,7 @@ import {
 } from "@/lib/server/changelog-repository"
 import { generateChangelogDraft } from "@/lib/server/draft-changelog"
 import { fetchCommitsByShas } from "@/lib/server/github-commits"
+import { normalizeChangelogListSearchQuery } from "@/lib/changelog/normalize-list-search-query"
 import { throwHttp } from "./errors"
 
 const DEFAULT_PAGE_SIZE = 20
@@ -61,6 +62,9 @@ const changelog = new Hono()
       return c.json({ error: "Invalid cursor" }, 400)
     }
 
+    const qRaw = c.req.query("q") ?? ""
+    const search = normalizeChangelogListSearchQuery(qRaw)
+
     const page = await listChangelogEntriesPage({
       limit,
       cursor: decodedCursor
@@ -69,6 +73,7 @@ const changelog = new Hono()
             slug: decodedCursor.slug,
           }
         : null,
+      search: search.length > 0 ? search : null,
     })
 
     return c.json({

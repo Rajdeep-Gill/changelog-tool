@@ -39,7 +39,7 @@ export function useCreateChangelog(
     },
     ...rest,
     onSuccess: (data, variables, context, mutation) => {
-      void queryClient.invalidateQueries({ queryKey: changelogQueryKeys.list() })
+      void queryClient.invalidateQueries({ queryKey: changelogQueryKeys.lists() })
       void queryClient.invalidateQueries({
         queryKey: changelogQueryKeys.detail(data.slug),
       })

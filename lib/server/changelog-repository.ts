@@ -1,4 +1,4 @@
-import { and, desc, eq, lt, ne, or } from "drizzle-orm"
+import { and, desc, eq, ilike, lt, ne, or } from "drizzle-orm"
 
 import { db } from "@/db/drizzle"
 import {
@@ -30,6 +30,24 @@ export type ChangelogListCursor = {
 export type ListChangelogEntriesPageInput = {
   limit: number
   cursor?: ChangelogListCursor | null
+  /** Case-insensitive substring match on title, summary, or body; caller trims / caps length. */
+  search?: string | null
+}
+
+function escapeLikePattern(value: string): string {
+  return value
+    .replace(/\\/g, "\\\\")
+    .replace(/%/g, "\\%")
+    .replace(/_/g, "\\_")
+}
+
+function entrySearchPredicate(trimmedSearch: string) {
+  const pattern = `%${escapeLikePattern(trimmedSearch)}%`
+  return or(
+    ilike(changelogEntries.title, pattern),
+    ilike(changelogEntries.summary, pattern),
+    ilike(changelogEntries.body, pattern)
+  )
 }
 
 export type ListChangelogEntriesPageResult = {
@@ -63,21 +81,31 @@ export async function listChangelogEntries(): Promise<ChangelogEntry[]> {
 export async function listChangelogEntriesPage({
   limit,
   cursor,
+  search,
 }: ListChangelogEntriesPageInput): Promise<ListChangelogEntriesPageResult> {
+  const trimmedSearch = search?.trim() ?? ""
+  const cursorPredicate = cursor
+    ? or(
+        lt(changelogEntries.publishedAt, cursor.publishedAt),
+        and(
+          eq(changelogEntries.publishedAt, cursor.publishedAt),
+          lt(changelogEntries.slug, cursor.slug)
+        )
+      )
+    : undefined
+
+  const searchPredicate =
+    trimmedSearch.length > 0 ? entrySearchPredicate(trimmedSearch) : undefined
+
+  const whereClause =
+    cursorPredicate && searchPredicate
+      ? and(cursorPredicate, searchPredicate)
+      : cursorPredicate ?? searchPredicate
+
   const rows = await db
     .select()
     .from(changelogEntries)
-    .where(
-      cursor
-        ? or(
-            lt(changelogEntries.publishedAt, cursor.publishedAt),
-            and(
-              eq(changelogEntries.publishedAt, cursor.publishedAt),
-              lt(changelogEntries.slug, cursor.slug)
-            )
-          )
-        : undefined
-    )
+    .where(whereClause)
     .orderBy(desc(changelogEntries.publishedAt), desc(changelogEntries.slug))
     .limit(limit + 1)
 

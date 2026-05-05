@@ -37,7 +37,7 @@ export function useDeleteChangelog(
     },
     ...rest,
     onSuccess: (data, variables, context, mutation) => {
-      void queryClient.invalidateQueries({ queryKey: changelogQueryKeys.list() })
+      void queryClient.invalidateQueries({ queryKey: changelogQueryKeys.lists() })
       void queryClient.invalidateQueries({
         queryKey: changelogQueryKeys.detail(variables.param.slug),
       })

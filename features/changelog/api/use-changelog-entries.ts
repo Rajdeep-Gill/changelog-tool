@@ -6,6 +6,7 @@ import {
   useInfiniteQuery,
 } from "@tanstack/react-query"
 
+import { normalizeChangelogListSearchQuery } from "@/lib/changelog/normalize-list-search-query"
 import { client } from "@/lib/hono"
 
 import { changelogQueryKeys } from "./query-keys"
@@ -18,12 +19,15 @@ type ResponseType = InferResponseType<
 const PAGE_SIZE = 20
 
 async function fetchChangelogListPage(
-  cursor: string | null
+  cursor: string | null,
+  searchQuery: string
 ): Promise<ResponseType> {
+  const q = normalizeChangelogListSearchQuery(searchQuery)
   const response = await client.api.changelog.$get({
     query: {
       limit: String(PAGE_SIZE),
       ...(cursor ? { cursor } : {}),
+      ...(q ? { q } : {}),
     },
   })
   if (!response.ok) {
@@ -32,15 +36,16 @@ async function fetchChangelogListPage(
   return response.json()
 }
 
-export function changelogEntriesQueryOptions() {
+export function changelogEntriesQueryOptions(searchQuery = "") {
   return infiniteQueryOptions({
-    queryKey: changelogQueryKeys.list(),
+    queryKey: changelogQueryKeys.list(searchQuery),
     initialPageParam: null as string | null,
-    queryFn: ({ pageParam }) => fetchChangelogListPage(pageParam),
+    queryFn: ({ pageParam }) =>
+      fetchChangelogListPage(pageParam, searchQuery),
     getNextPageParam: (lastPage) => lastPage.nextCursor,
   })
 }
 
-export function useChangelogEntries() {
-  return useInfiniteQuery(changelogEntriesQueryOptions())
+export function useChangelogEntries(searchQuery = "") {
+  return useInfiniteQuery(changelogEntriesQueryOptions(searchQuery))
 }
