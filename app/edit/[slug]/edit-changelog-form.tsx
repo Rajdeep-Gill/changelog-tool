@@ -19,6 +19,14 @@ import { toastEntryDeleted, toastEntrySaved } from "@/lib/changelog/changelog-to
 import { ChangelogBreadcrumbs } from "@/components/changelog/changelog-breadcrumbs"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -35,6 +43,7 @@ export function EditChangelogForm({ slug }: EditChangelogFormProps) {
   const router = useRouter()
   const entryQuery = useChangelogEntry(slug)
   const [slugInput, setSlugInput] = React.useState(slug)
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
 
   const composeForm = useForm<ChangelogComposeFormValues>({
     resolver: standardSchemaResolver(changelogComposeFormSchema),
@@ -92,19 +101,58 @@ export function EditChangelogForm({ slug }: EditChangelogFormProps) {
     },
   })
 
-  const handleDelete = () => {
-    if (
-      !window.confirm(
-        "Delete this changelog entry permanently? This cannot be undone."
-      )
-    ) {
-      return
+  const confirmDelete = async () => {
+    try {
+      await deleteMutation.mutateAsync({ param: { slug } })
+      setDeleteDialogOpen(false)
+    } catch {
+      // Error toast is handled by deleteMutation.onError
     }
-    void deleteMutation.mutateAsync({ param: { slug } })
   }
 
   return (
     <div className="flex min-h-svh flex-col bg-background pb-6 sm:pb-4">
+      <Dialog
+        open={deleteDialogOpen}
+        onOpenChange={(open) => {
+          if (!open && deleteMutation.isPending) return
+          setDeleteDialogOpen(open)
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete this entry?</DialogTitle>
+            <DialogDescription>
+              This permanently removes the changelog entry. This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={deleteMutation.isPending}
+              onClick={() => setDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={deleteMutation.isPending}
+              onClick={() => void confirmDelete()}
+            >
+              {deleteMutation.isPending ? (
+                <>
+                  <Spinner className="size-4" />
+                  Deleting…
+                </>
+              ) : (
+                "Delete entry"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <div
         className={cn(
           "mx-auto w-full max-w-5xl px-4 pt-12 pb-2 sm:px-6 sm:pt-16 sm:pb-3",
@@ -213,16 +261,9 @@ export function EditChangelogForm({ slug }: EditChangelogFormProps) {
                       type="button"
                       variant="destructive"
                       disabled={deleteMutation.isPending || saveMutation.isPending}
-                      onClick={handleDelete}
+                      onClick={() => setDeleteDialogOpen(true)}
                     >
-                      {deleteMutation.isPending ? (
-                        <>
-                          <Spinner className="size-4" />
-                          Deleting…
-                        </>
-                      ) : (
-                        "Delete entry"
-                      )}
+                      Delete entry
                     </Button>
                     <Button
                       type="button"
