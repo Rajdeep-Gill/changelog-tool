@@ -7,6 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useChangelogEntries } from "@/features/changelog/api/use-changelog-entries"
 
 import { ChangelogIndexSkeleton } from "./changelog-index-skeleton"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export function ChangelogIndexClient() {
   const {
@@ -50,11 +51,11 @@ export function ChangelogIndexClient() {
 
   return (
     <>
-      <header className="mb-10 sm:mb-12">
-        <h1 className="font-heading text-3xl font-medium tracking-tight text-foreground sm:text-4xl">
+      <header className="mb-10 sm:mb-12 flex gap-3 flex-col">
+        <h1 className="font-heading text-3xl font-medium text-foreground sm:text-4xl">
           Changelog
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           New features, fixes, and other updates to the platform. Click through
           for full release notes.
         </p>
@@ -71,9 +72,7 @@ export function ChangelogIndexClient() {
 
       <ChangelogTimeline entries={entries} />
       {hasNextPage ? (
-        <div ref={sentinelRef} className="py-6 text-center text-sm text-muted-foreground">
-          {isFetchingNextPage ? "Loading more updates..." : "Scroll to load more"}
-        </div>
+        <Skeleton ref={sentinelRef} className="h-10 w-full rounded-lg" />
       ) : null}
     </>
   )

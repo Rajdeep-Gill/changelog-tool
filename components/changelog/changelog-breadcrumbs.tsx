@@ -34,11 +34,7 @@ export function ChangelogBreadcrumbs({
 }: ChangelogBreadcrumbsProps) {
   return (
     <Breadcrumb className={className}>
-      <BreadcrumbList
-        className={cn(
-          "gap-1.5 text-[0.9375rem] leading-snug wrap-break-word text-muted-foreground"
-        )}
-      >
+      <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink render={<Link href="/" />}>Home</BreadcrumbLink>
         </BreadcrumbItem>
@@ -76,7 +72,7 @@ export function ChangelogBreadcrumbs({
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbPage className="max-w-[min(100%,36rem)] truncate">
+              <BreadcrumbPage>
                 {subPage}
               </BreadcrumbPage>
             </BreadcrumbItem>
