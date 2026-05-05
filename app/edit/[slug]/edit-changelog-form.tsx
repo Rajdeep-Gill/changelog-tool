@@ -17,11 +17,6 @@ import {
 } from "@/lib/changelog/changelog-compose-form-schema"
 import { toastEntryDeleted, toastEntrySaved } from "@/lib/changelog/changelog-toasts"
 import { ChangelogBreadcrumbs } from "@/components/changelog/changelog-breadcrumbs"
-import {
-  changelogBreadcrumbRowClassName,
-  changelogPageHeaderSectionClassName,
-  editMainColumnClassName,
-} from "@/components/changelog/layout-classes"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -30,6 +25,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 import { ChangelogEntryForm } from "@/components/changelog/changelog-entry-form"
 import { formatPublishedAtLocal } from "@/lib/changelog/published-at-local"
+import { cn } from "@/lib/utils"
 
 type EditChangelogFormProps = {
   slug: string
@@ -108,9 +104,19 @@ export function EditChangelogForm({ slug }: EditChangelogFormProps) {
   }
 
   return (
-    <div className="min-h-svh bg-background pb-16">
-      <div className={editMainColumnClassName}>
-        <div className={changelogBreadcrumbRowClassName}>
+    <div className="flex min-h-svh flex-col bg-background pb-6 sm:pb-4">
+      <div
+        className={cn(
+          "mx-auto w-full max-w-5xl px-4 pt-12 pb-2 sm:px-6 sm:pt-16 sm:pb-3",
+          "flex flex-col"
+        )}
+      >
+        <div
+          className={cn(
+            "mb-6 flex min-h-8 w-full flex-wrap items-center",
+            "shrink-0"
+          )}
+        >
           <ChangelogBreadcrumbs
             priorSubPage={{ label: "Edit", href: "/edit" }}
             entryTitle={entryQuery.isPending ? "…" : (entryQuery.data?.title?.trim() || "Untitled")}
@@ -141,8 +147,8 @@ export function EditChangelogForm({ slug }: EditChangelogFormProps) {
             </AlertDescription>
           </Alert>
         ) : (
-          <>
-            <header className={changelogPageHeaderSectionClassName}>
+          <div className="flex flex-col">
+            <header className="mb-10 shrink-0 sm:mb-12">
               <h1 className="font-heading text-3xl font-medium tracking-tight text-foreground sm:text-4xl">
                 Edit entry
               </h1>
@@ -151,10 +157,16 @@ export function EditChangelogForm({ slug }: EditChangelogFormProps) {
               </p>
             </header>
 
-            <div className="space-y-4">
+            <div className="flex flex-col gap-4">
               <ChangelogEntryForm
                 mode="edit"
                 composeForm={composeForm}
+                composeBodyKey={
+                  entryQuery.data
+                    ? `${slug}-${String(entryQuery.dataUpdatedAt)}`
+                    : `${slug}-pending`
+                }
+                composeBodySeedMarkdown={entryQuery.data?.body}
                 submitPending={saveMutation.isPending || deleteMutation.isPending}
                 renderPreCompose={({ composeTitle }) => (
                   <div className="space-y-1">
@@ -224,7 +236,7 @@ export function EditChangelogForm({ slug }: EditChangelogFormProps) {
                 }
               />
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>

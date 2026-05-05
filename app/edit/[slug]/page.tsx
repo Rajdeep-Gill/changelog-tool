@@ -1,4 +1,4 @@
-import { EditChangelogForm } from "../edit-changelog-form"
+import { EditChangelogForm } from "./edit-changelog-form"
 
 type PageProps = {
   params: Promise<{ slug: string }>
