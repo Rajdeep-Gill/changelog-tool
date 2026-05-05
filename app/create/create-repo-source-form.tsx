@@ -1,12 +1,17 @@
 "use client"
 
 import { format } from "date-fns"
+import { CalendarBlankIcon } from "@phosphor-icons/react"
 import {
   Controller,
+  useFormState,
+  useWatch,
   type Control,
   type SubmitHandler,
   type UseFormHandleSubmit,
+  type UseFormSetValue,
 } from "react-hook-form"
+import { type DateRange } from "react-day-picker"
 
 import type { UseRepoCommitsResult } from "@/features/github/api/use-repo-commits"
 import { buildRepoSourceWindow } from "@/lib/changelog/repo-source-payload"
@@ -25,15 +30,29 @@ import { cn } from "@/lib/utils"
 
 type CreateRepoSourceFormProps = {
   repoControl: Control<RepoWindowFormValues>
+  setRepoValue: UseFormSetValue<RepoWindowFormValues>
   handleRepoSubmit: UseFormHandleSubmit<RepoWindowFormValues>
   fetchCommits: Pick<UseRepoCommitsResult, "isPending" | "mutateAsync">
 }
 
 export function CreateRepoSourceForm({
   repoControl,
+  setRepoValue,
   handleRepoSubmit,
   fetchCommits,
 }: CreateRepoSourceFormProps) {
+  const dateFrom = useWatch({ control: repoControl, name: "dateFrom" })
+  const dateTo = useWatch({ control: repoControl, name: "dateTo" })
+  const { errors } = useFormState({
+    control: repoControl,
+    name: ["dateFrom", "dateTo"],
+  })
+  const rangeError = errors.dateFrom?.message ?? errors.dateTo?.message
+  const rangeInvalid = Boolean(errors.dateFrom ?? errors.dateTo)
+
+  const selectedRange: DateRange | undefined =
+    dateFrom && dateTo ? { from: dateFrom, to: dateTo } : undefined
+
   const onSubmitFetchCommits: SubmitHandler<RepoWindowFormValues> = (values) => {
     const sourceWindow = buildRepoSourceWindow(values)
     if (!sourceWindow) return
@@ -104,95 +123,76 @@ export function CreateRepoSourceForm({
             )}
           />
         </div>
-        <Controller
-          name="dateFrom"
-          control={repoControl}
-          render={({ field, fieldState }) => (
-            <div className="space-y-1">
-              <Label htmlFor="date-from">From</Label>
-              <Popover>
-                <PopoverTrigger
-                  id="date-from"
-                  render={
-                    <Button
-                      type="button"
-                      variant="outline"
-                      aria-invalid={fieldState.invalid}
-                      className={cn(
-                        "w-full justify-start font-normal",
-                        fieldState.invalid && "border-destructive"
-                      )}
-                    >
-                      {field.value ? format(field.value, "PPP") : "Pick date"}
-                    </Button>
-                  }
+        <div className="grid grid-cols-1 gap-x-3 gap-y-2 sm:col-span-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+          <Label htmlFor="repo-date-range" className="col-span-full">
+            Date range
+          </Label>
+          <div className="flex min-w-0 flex-col gap-2">
+            <Popover>
+              <PopoverTrigger
+                id="repo-date-range"
+                render={
+                  <Button
+                    type="button"
+                    variant="outline"
+                    aria-invalid={rangeInvalid}
+                    className={cn(
+                      "h-8 w-full justify-start gap-2 px-2.5 font-normal text-xs",
+                      rangeInvalid && "border-destructive"
+                    )}
+                  >
+                    {selectedRange?.from ? (
+                      selectedRange.to ? (
+                        <>
+                          {format(selectedRange.from, "LLL dd, y")} -{" "}
+                          {format(selectedRange.to, "LLL dd, y")}
+                        </>
+                      ) : (
+                        format(selectedRange.from, "LLL dd, y")
+                      )
+                    ) : (
+                      <span className="text-muted-foreground">Pick dates</span>
+                    )}
+                  </Button>
+                }
+              />
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="range"
+                  defaultMonth={selectedRange?.from}
+                  selected={selectedRange}
+                  onSelect={(range) => {
+                    if (!range?.from) return
+                    setRepoValue("dateFrom", range.from, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                    if (range.to) {
+                      setRepoValue("dateTo", range.to, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      })
+                    } else {
+                      setRepoValue("dateTo", range.from, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      })
+                    }
+                  }}
+                  numberOfMonths={2}
                 />
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={(d) => {
-                      field.onChange(d ?? field.value)
-                    }}
-                    captionLayout="dropdown"
-                  />
-                </PopoverContent>
-              </Popover>
-              {fieldState.error ? (
-                <p className="text-sm text-destructive" role="alert">
-                  {fieldState.error.message}
-                </p>
-              ) : null}
-            </div>
-          )}
-        />
-        <Controller
-          name="dateTo"
-          control={repoControl}
-          render={({ field, fieldState }) => (
-            <div className="space-y-1">
-              <Label htmlFor="date-to">To</Label>
-              <Popover>
-                <PopoverTrigger
-                  id="date-to"
-                  render={
-                    <Button
-                      type="button"
-                      variant="outline"
-                      aria-invalid={fieldState.invalid}
-                      className={cn(
-                        "w-full justify-start font-normal",
-                        fieldState.invalid && "border-destructive"
-                      )}
-                    >
-                      {field.value ? format(field.value, "PPP") : "Pick date"}
-                    </Button>
-                  }
-                />
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={(d) => {
-                      field.onChange(d ?? field.value)
-                    }}
-                    captionLayout="dropdown"
-                  />
-                </PopoverContent>
-              </Popover>
-              {fieldState.error ? (
-                <p className="text-sm text-destructive" role="alert">
-                  {fieldState.error.message}
-                </p>
-              ) : null}
-            </div>
-          )}
-        />
-        <div className="w-full sm:col-span-2">
+              </PopoverContent>
+            </Popover>
+            {rangeError ? (
+              <p className="text-sm text-destructive" role="alert">
+                {rangeError}
+              </p>
+            ) : null}
+          </div>
           <Button
             type="submit"
             size="sm"
-            className="h-8 w-full"
+            className="h-8 w-full self-start sm:w-auto sm:min-w-22"
             disabled={fetchCommits.isPending}
           >
             {fetchCommits.isPending ? (
@@ -201,7 +201,7 @@ export function CreateRepoSourceForm({
                 Loading…
               </>
             ) : (
-              "Fetch commits"
+              "Fetch"
             )}
           </Button>
         </div>

@@ -87,7 +87,7 @@ export function RepoCommitsPicker({
         ) : null}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] border-t border-border/40 pt-1">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] border-t border-border/40 px-1.5 pt-1">
         {commits.length === 0 ? (
           <div
             className="flex min-h-40 flex-col items-center justify-center gap-2 rounded-md border border-dashed border-border/55 bg-muted/25 px-5 py-8 text-center sm:min-h-48"

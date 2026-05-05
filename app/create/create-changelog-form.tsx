@@ -19,7 +19,6 @@ import {
 } from "@/lib/changelog/repo-window-form-schema"
 import { toastEntryCreated } from "@/lib/changelog/changelog-toasts"
 import { ChangelogBreadcrumbs } from "@/components/changelog/changelog-breadcrumbs"
-import { changelogBreadcrumbRowClassName } from "@/components/changelog/layout-classes"
 import { ChangelogEntryForm } from "@/components/changelog/changelog-entry-form"
 import { CreateChangelogDraftPanel } from "./create-changelog-draft-panel"
 import { CreateRepoSourceForm } from "./create-repo-source-form"
@@ -53,6 +52,7 @@ export function CreateChangelogForm() {
     handleSubmit: handleRepoSubmit,
     reset: resetRepoWindow,
     getValues: getRepoValues,
+    setValue: setRepoValue,
   } = repoForm
 
   React.useEffect(() => {
@@ -88,11 +88,11 @@ export function CreateChangelogForm() {
   })
 
   return (
-    <div className="flex h-svh max-h-svh flex-col overflow-hidden bg-background">
-      <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden px-3 py-3 sm:px-4 sm:py-4">
+    <div className="flex min-h-svh flex-col bg-background lg:h-svh lg:max-h-svh lg:overflow-hidden">
+      <div className="flex w-full flex-1 flex-col px-3 py-3 sm:px-4 sm:py-4 lg:min-h-0 lg:overflow-hidden">
         <div
           className={cn(
-            changelogBreadcrumbRowClassName,
+            "mb-6 flex min-h-8 w-full flex-wrap items-center",
             "mb-3 shrink-0 sm:mb-4"
           )}
         >
@@ -105,17 +105,18 @@ export function CreateChangelogForm() {
           </h1>
         </header>
 
-        <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 grid-rows-[minmax(0,1.08fr)_minmax(0,1fr)] gap-x-0 gap-y-3 overflow-hidden sm:gap-y-4 lg:grid-cols-[minmax(0,0.42fr)_auto_minmax(0,1fr)] lg:grid-rows-1 lg:items-stretch lg:gap-y-0">
-          <div className="flex min-h-0 min-w-0 flex-col overflow-hidden lg:h-[calc(100svh-8.5rem)] lg:max-h-[calc(100svh-8.5rem)]">
-            <div className="flex min-h-0 flex-1 flex-col px-2 sm:px-3">
+        <div className="grid min-w-0 flex-1 grid-cols-1 grid-rows-[auto_auto] gap-x-0 gap-y-3 sm:gap-y-4 lg:min-h-0 lg:grid-cols-[minmax(0,0.42fr)_auto_minmax(0,1fr)] lg:grid-rows-1 lg:items-stretch lg:gap-y-0 lg:overflow-hidden">
+          <div className="flex min-w-0 flex-col lg:min-h-0 lg:overflow-hidden lg:h-[calc(100svh-8.5rem)] lg:max-h-[calc(100svh-8.5rem)]">
+            <div className="flex flex-1 flex-col px-2 sm:px-3 lg:min-h-0">
               <CreateRepoSourceForm
                 repoControl={repoControl}
+                setRepoValue={setRepoValue}
                 handleRepoSubmit={handleRepoSubmit}
                 fetchCommits={loadCommits}
               />
 
-              <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-t border-border/40">
-                <div className="flex min-h-0 min-w-0 flex-1 flex-col px-1 sm:px-1.5">
+              <div className="flex flex-1 flex-col border-t border-border/40 lg:min-h-0 lg:overflow-hidden">
+                <div className="flex min-w-0 flex-1 flex-col px-1 sm:px-1.5 lg:min-h-0">
                   <CreateChangelogDraftPanel
                     commits={commits}
                     selected={selected}
@@ -146,8 +147,8 @@ export function CreateChangelogForm() {
             <div className="min-h-0 w-px flex-1 bg-border/60" />
           </div>
 
-          <div className="flex min-h-0 min-w-0 flex-col overflow-hidden lg:h-[calc(100svh-8.5rem)] lg:max-h-[calc(100svh-8.5rem)]">
-            <div className="flex min-h-0 flex-1 flex-col px-2 sm:px-3">
+          <div className="flex min-w-0 flex-col lg:min-h-0 lg:overflow-hidden lg:h-[calc(100svh-8.5rem)] lg:max-h-[calc(100svh-8.5rem)]">
+            <div className="flex flex-1 flex-col px-2 sm:px-3 lg:min-h-0">
               <ChangelogEntryForm
                 mode="create"
                 composeForm={composeForm}
