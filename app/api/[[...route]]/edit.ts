@@ -1,5 +1,6 @@
 import { Hono } from "hono"
 import { zValidator } from "@hono/zod-validator"
+import { revalidatePath } from "next/cache"
 import type { z } from "zod"
 
 import { patchChangelogBodySchema } from "@/lib/changelog/api-schemas"
@@ -42,6 +43,11 @@ const edit = new Hono()
         }
         return c.json({ error: "Slug already in use" }, 409)
       }
+
+      revalidatePath("/changelog")
+      revalidatePath(`/changelog/${slug}`)
+      revalidatePath(`/changelog/${result.entry.slug}`)
+
       return c.json(result.entry)
     }
   )

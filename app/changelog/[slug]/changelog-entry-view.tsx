@@ -1,5 +1,3 @@
-"use client"
-
 import { EntryTags } from "@/components/changelog/entry-tags"
 import { MarkdownBody } from "@/components/changelog/markdown-body"
 import { Badge } from "@/components/ui/badge"
