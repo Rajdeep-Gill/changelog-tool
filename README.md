@@ -95,11 +95,12 @@ lib/
 
 ## Product and technical choices
 
-**Why this shape:** Maintainers care about two things: seeing what landed in git over a window, and turning that into **end-user-facing** notes. The create flow fetches commits server-side via the GitHub API, lets you **curate** SHAs (noise control vs. dumping every commit), then calls an LLM with structured output (title, summary, markdown body, tags, etc.) so the result is predictable and easy to edit before publish.
+**Why this shape:** Maintainers care about two things: seeing what landed in git over a window, and turning that into **end-user-facing** notes. The create flow fetches commits via the GitHub API, lets you curate SHAs (noise control vs. dumping every commit), then calls an LLM with structured output (title, summary, markdown body, tags, etc.) so the result is predictable and easy to edit before publish.
 
 **Stack:** **Next.js** (App Router) keeps API routes and UI in one deployable app. **Neon + Drizzle** fit a small changelog table without running Postgres yourself. **Vercel AI SDK** + **`@ai-sdk/google`** give `generateObject` with a Zod schema so the model returns typed fields instead of raw markdown parsing. **TanStack Query** handles client fetching; **shadcn/ui** + Tailwind keep the UI minimal and consistent with a docs-style changelog.
 
-**Markdown editing:** The compose UI uses **Milkdown** (CommonMark) so authors get a proper editing surface while the API and DB stay markdown-first.
+**Markdown editing:** The compose UI uses **Milkdown** so authors get a proper editing surface while the API and DB stay markdown-first.
 
-**Search:** The public changelog list filters entries with a **case-insensitive substring** match over title, summary, and body; the query string is reflected in `q` so results are linkable.
+**Search:** The public changelog list filters entries with a **case-insensitive substring** match over title, summary, and body; the query string is reflected in `q` so results are shareable.
 
+Each entry is also statically generated at build time so switching between different changelogs is near instant. There is also revalidation of the changelog on editing and deleting entries so users never see stale data. This would also improve performance and SEO.
